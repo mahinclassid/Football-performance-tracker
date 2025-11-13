@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String   // bcrypt hash
+  role      Role     @default(STAFF)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN // Coach (full access)
+  STAFF // Assistant coach / medical / sporting director
+}
+
+model Player {
+  id        Int       @id @default(autoincrement())
+  firstName String
+  lastName  String
+  position  Position
+  shirtNo   Int?
+  dob       DateTime?
+  heightCm  Int?
+  weightKg  Int?
+  status    PlayerStatus @default(ACTIVE)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  stats     PlayerMatchStat[]
+}
+
+enum Position {
+  GK
+  DF
+  MF
+  FW
+}
+
+enum PlayerStatus {
+  ACTIVE
+  INJURED
+  SUSPENDED
+  RESTING
+}
+
+model Match {
+  id        Int       @id @default(autoincrement())
+  opponent  String
+  date      DateTime
+  venue     String?   // Home/Away or stadium name
+  result    String?   // e.g., 2-1
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  stats     PlayerMatchStat[]
+}
+
+model PlayerMatchStat {
+  id        Int     @id @default(autoincrement())
+  playerId  Int
+  matchId   Int
+  minutes   Int     @default(0)
+  goals     Int     @default(0)
+  assists   Int     @default(0)
+  yellow    Int     @default(0)
+  red       Int     @default(0)
+  player    Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  match     Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, matchId]) // one row per player per match
+}
+
+
+
+

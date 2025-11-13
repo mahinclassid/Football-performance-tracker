@@ -1,26 +1,140 @@
 @import "tailwindcss";
 
 :root {
+  /* Background colors */
   --background: #ffffff;
-  --foreground: #171717;
+  --background-secondary: #F9FAFB;
+  --foreground: #000000;
+  
+  /* Primary brand colors */
+  --pitch: #0B0F10;
+  --club-primary: #10B981;
+  --club-primary-dark: #065F46;
+  --club-accent: #A7F3D0;
+  
+  /* Text colors */
+  --text-primary: #000000;
+  --text-secondary: #1F2937;
+  --text-tertiary: #374151;
+  --text-muted: #6B7280;
+  --text-inverse: #FFFFFF;
+  
+  /* Status colors */
+  --status-success: #84CC16;
+  --status-warning: #F59E0B;
+  --status-error: #EF4444;
+  --status-info: #3B82F6;
+  
+  /* Border colors */
+  --border-light: #E5E7EB;
+  --border-default: #D1D5DB;
+  --border-dark: #9CA3AF;
+  
+  /* Card colors */
+  --card-background: #FFFFFF;
+  --card-border: #F3F4F6;
+  --card-shadow: rgba(6, 95, 70, 0.12);
 }
 
 @theme inline {
+  /* Background colors */
   --color-background: var(--background);
+  --color-background-secondary: var(--background-secondary);
   --color-foreground: var(--foreground);
+  
+  /* Primary brand colors */
+  --color-pitch: var(--pitch);
+  --color-club-primary: var(--club-primary);
+  --color-club-primary-dark: var(--club-primary-dark);
+  --color-club-accent: var(--club-accent);
+  
+  /* Text colors */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-muted: var(--text-muted);
+  --color-text-inverse: var(--text-inverse);
+  
+  /* Status colors */
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-error: var(--status-error);
+  --color-status-info: var(--status-info);
+  
+  /* Border colors */
+  --color-border-light: var(--border-light);
+  --color-border-default: var(--border-default);
+  --color-border-dark: var(--border-dark);
+  
+  /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  
+  /* Shadows */
+  --shadow-card: var(--card-shadow);
+  
+  /* Border radius */
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: #000000;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Ensure Tailwind text utilities have proper specificity */
+.text-black {
+  color: #000000 !important;
+}
+
+.text-white {
+  color: #FFFFFF !important;
+}
+
+/* Toast animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes hide {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-hide {
+  animation: hide 0.2s ease-in;
+}
+
+/* Print styles */
+@media print {
+  nav,
+  aside,
+  button:not(.print-button),
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  .print-page {
+    page-break-after: always;
+  }
 }
