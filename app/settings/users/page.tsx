@@ -17,6 +17,8 @@ import { useToast } from '@/components/ui/Toast';
 import { Toast } from '@/components/ui/Toast';
 import { useSession } from 'next-auth/react';
 import { formatDate } from '@/lib/utils';
+import { Role } from '@prisma/client';
+import type { UserInput } from '@/lib/zod-schemas';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -24,7 +26,7 @@ interface User {
   id: number;
   name: string;
   email: string;
-  role: string;
+  role: Role;
   createdAt: string;
 }
 
@@ -207,7 +209,12 @@ export default function UsersPage() {
         >
           <UserForm
             onSubmit={handleSubmit}
-            defaultValues={editingUser || undefined}
+            defaultValues={editingUser ? {
+              id: editingUser.id,
+              name: editingUser.name,
+              email: editingUser.email,
+              role: editingUser.role as UserInput['role'],
+            } : undefined}
             onCancel={() => {
               setIsDialogOpen(false);
               setEditingUser(null);
@@ -223,7 +230,12 @@ export default function UsersPage() {
         >
           <UserForm
             onSubmit={handlePasswordReset}
-            defaultValues={editingUser || undefined}
+            defaultValues={editingUser ? {
+              id: editingUser.id,
+              name: editingUser.name,
+              email: editingUser.email,
+              role: editingUser.role as UserInput['role'],
+            } : undefined}
             onCancel={() => {
               setIsPasswordDialogOpen(false);
               setEditingUser(null);

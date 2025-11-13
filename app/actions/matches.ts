@@ -7,6 +7,8 @@ import { revalidatePath } from 'next/cache';
 import { Role } from '@prisma/client';
 import type { ActionResult } from './players';
 
+export type { ActionResult };
+
 export async function createMatch(data: MatchInput): Promise<ActionResult<{ id: number }>> {
   try {
     const session = await auth();

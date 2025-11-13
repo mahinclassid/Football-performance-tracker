@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { userSchema, type UserInput } from '@/lib/zod-schemas';
 import { Role } from '@prisma/client';
@@ -43,9 +43,11 @@ export function UserForm({
     }
   }, [defaultValues, setValue]);
 
+  const onSubmitHandler: SubmitHandler<UserInput> = onSubmit;
+
   if (isPasswordReset) {
     return (
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmitHandler)} className="space-y-4">
         <div>
           <label htmlFor="password" className="block text-sm font-medium text-gray-900">
             New Password *
@@ -82,7 +84,7 @@ export function UserForm({
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmitHandler)} className="space-y-4">
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
           Name *

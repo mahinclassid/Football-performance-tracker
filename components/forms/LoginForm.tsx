@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signIn } from 'next-auth/react';
@@ -10,7 +10,7 @@ import { useToast, Toast } from '@/components/ui/Toast';
 import { LoadingAnimation } from '@/components/ui/LoadingAnimation';
 import { themeClasses } from '@/lib/theme-classes';
 
-export function LoginForm() {
+function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
@@ -112,6 +112,18 @@ export function LoginForm() {
         variant={toast.variant}
       />
     </>
+  );
+}
+
+export function LoginForm() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    }>
+      <LoginFormContent />
+    </Suspense>
   );
 }
 

@@ -8,6 +8,8 @@ import { Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import type { ActionResult } from './players';
 
+export type { ActionResult };
+
 export async function createUser(data: UserInput): Promise<ActionResult> {
   try {
     const session = await auth();

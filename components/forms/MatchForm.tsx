@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { matchSchema, type MatchInput } from '@/lib/zod-schemas';
 
@@ -20,12 +20,14 @@ export function MatchForm({ onSubmit, defaultValues, onCancel, isLoading }: Matc
   } = useForm<MatchInput>({
     resolver: zodResolver(matchSchema),
     defaultValues: defaultValues || {
-      date: new Date().toISOString().split('T')[0],
+      date: new Date(),
     },
   });
 
+  const onSubmitHandler: SubmitHandler<MatchInput> = onSubmit;
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmitHandler)} className="space-y-4">
       <div>
         <label htmlFor="opponent" className="block text-sm font-medium text-gray-900">
           Opponent *

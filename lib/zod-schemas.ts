@@ -13,7 +13,7 @@ export const playerSchema = z.object({
   dob: z.date().optional().nullable(),
   heightCm: z.number().int().positive().optional().nullable(),
   weightKg: z.number().int().positive().optional().nullable(),
-  status: z.enum(['ACTIVE', 'INJURED', 'SUSPENDED', 'RESTING']).default('ACTIVE'),
+  status: z.enum(['ACTIVE', 'INJURED', 'SUSPENDED', 'RESTING']),
 });
 
 export const matchSchema = z.object({
@@ -37,7 +37,7 @@ export const userSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  role: z.enum(['ADMIN', 'STAFF']).default('STAFF'),
+  role: z.enum(['ADMIN', 'STAFF']),
 });
 
 export const updateUserSchema = z.object({

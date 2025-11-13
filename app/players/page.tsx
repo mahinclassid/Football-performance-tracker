@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
@@ -13,7 +13,7 @@ import { PlayerForm } from '@/components/forms/PlayerForm';
 import { createPlayer, updatePlayer, deletePlayer, type ActionResult } from '@/app/actions/players';
 import { useToast } from '@/components/ui/Toast';
 import { Toast } from '@/components/ui/Toast';
-import { Position } from '@prisma/client';
+import { Position, PlayerStatus } from '@prisma/client';
 import type { PlayerInput } from '@/lib/zod-schemas';
 import { useSession } from 'next-auth/react';
 
@@ -23,7 +23,7 @@ interface Player {
   lastName: string;
   position: Position;
   shirtNo: number | null;
-  status: string;
+  status: PlayerStatus;
   totalGoals: number;
   totalAssists: number;
   totalMinutes: number;
@@ -38,7 +38,7 @@ const positionFilters = [
   { value: 'FW', label: 'FW' },
 ];
 
-export default function PlayersPage() {
+function PlayersPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
@@ -235,7 +235,14 @@ export default function PlayersPage() {
       >
         <PlayerForm
           onSubmit={handleSubmit}
-          defaultValues={editingPlayer || undefined}
+          defaultValues={editingPlayer ? {
+            id: editingPlayer.id,
+            firstName: editingPlayer.firstName,
+            lastName: editingPlayer.lastName,
+            position: editingPlayer.position,
+            shirtNo: editingPlayer.shirtNo,
+            status: editingPlayer.status as PlayerInput['status'],
+          } : undefined}
           onCancel={() => {
             setIsDialogOpen(false);
             setEditingPlayer(null);
@@ -253,6 +260,18 @@ export default function PlayersPage() {
       />
       </div>
     </LoadingWrapper>
+  );
+}
+
+export default function PlayersPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-600">Loading players...</div>
+      </div>
+    }>
+      <PlayersPageContent />
+    </Suspense>
   );
 }
 

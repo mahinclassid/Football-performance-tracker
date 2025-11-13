@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { playerSchema, type PlayerInput } from '@/lib/zod-schemas';
 import { Position, PlayerStatus } from '@prisma/client';
@@ -36,8 +36,10 @@ export function PlayerForm({ onSubmit, defaultValues, onCancel, isLoading }: Pla
     }
   }, [defaultValues, setValue]);
 
+  const onSubmitHandler: SubmitHandler<PlayerInput> = onSubmit;
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmitHandler)} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="firstName" className="block text-sm font-medium text-gray-900">
