@@ -16,13 +16,31 @@ export async function GET(request: NextRequest) {
     const position = searchParams.get('position') as Position | null;
     const sort = searchParams.get('sort') || 'lastName';
     const dir = searchParams.get('dir') || 'asc';
+    const seasonName = searchParams.get('season') || '';
+
+    // Get season ID
+    let seasonId: number | null = null;
+    if (seasonName) {
+      const season = await prisma.season.findUnique({
+        where: { name: seasonName },
+      });
+      seasonId = season?.id || -1; // -1 to return no stats if requested season not found
+    } else {
+      // Default to current season
+      const currentSeason = await prisma.season.findFirst({
+        where: { isCurrent: true },
+      });
+      seasonId = currentSeason?.id || -1; // -1 to return no stats if no current season
+    }
 
     const where: any = {};
     if (q) {
       where.OR = [
         { firstName: { contains: q, mode: 'insensitive' } },
         { lastName: { contains: q, mode: 'insensitive' } },
-      ];
+        { position: { contains: q, mode: 'insensitive' } },
+        { shirtNo: isNaN(Number(q)) ? undefined : Number(q) },
+      ].filter(Boolean);
     }
     if (position) {
       where.position = position;
@@ -37,15 +55,22 @@ export async function GET(request: NextRequest) {
       orderBy[sort] = dir;
     }
 
+    const statsWhere = seasonId ? { seasonId } : {};
+
     const players = await prisma.player.findMany({
       where,
       orderBy,
       include: {
         stats: {
+          where: statsWhere,
           select: {
             goals: true,
             assists: true,
             minutes: true,
+            tackles: true,
+            blocks: true,
+            saves: true,
+            rating: true,
           },
         },
       },
@@ -58,24 +83,72 @@ export async function GET(request: NextRequest) {
           goals: acc.goals + stat.goals,
           assists: acc.assists + stat.assists,
           minutes: acc.minutes + stat.minutes,
+          tackles: acc.tackles + (stat.tackles || 0),
+          blocks: acc.blocks + (stat.blocks || 0),
+          saves: acc.saves + (stat.saves || 0),
+          ratings: acc.ratings + (stat.rating || 0),
+          matchCount: acc.matchCount + 1,
         }),
-        { goals: 0, assists: 0, minutes: 0 }
+        { goals: 0, assists: 0, minutes: 0, tackles: 0, blocks: 0, saves: 0, ratings: 0, matchCount: 0 }
       );
+
+      // Calculate match started (matches where stats exist)
+      const matchesStarted = player.stats.length;
+
+      // Calculate average rating
+      const avgRating = totals.matchCount > 0 && totals.ratings > 0
+        ? totals.ratings / totals.matchCount
+        : null;
 
       return {
         ...player,
         totalGoals: totals.goals,
         totalAssists: totals.assists,
         totalMinutes: totals.minutes,
+        totalTackles: totals.tackles,
+        totalBlocks: totals.blocks,
+        totalSaves: totals.saves,
+        totalPlayers: 1, // Each player entry represents one player
+        matchesStarted,
+        avgRating,
       };
     });
 
     // Sort by stats if needed
-    if (sort === 'goals' || sort === 'assists' || sort === 'minutes') {
+    if (sort === 'goals' || sort === 'assists' || sort === 'minutes' ||
+      sort === 'tackles' || sort === 'blocks' || sort === 'saves' ||
+      sort === 'matchesStarted' || sort === 'avgRating') {
       playersWithStats.sort((a, b) => {
-        const aVal = a[`total${sort.charAt(0).toUpperCase() + sort.slice(1)}` as keyof typeof a] as number;
-        const bVal = b[`total${sort.charAt(0).toUpperCase() + sort.slice(1)}` as keyof typeof b] as number;
-        return dir === 'asc' ? aVal - bVal : bVal - aVal;
+        let aVal: number | null = 0;
+        let bVal: number | null = 0;
+
+        if (sort === 'goals') {
+          aVal = a.totalGoals;
+          bVal = b.totalGoals;
+        } else if (sort === 'assists') {
+          aVal = a.totalAssists;
+          bVal = b.totalAssists;
+        } else if (sort === 'minutes') {
+          aVal = a.totalMinutes;
+          bVal = b.totalMinutes;
+        } else if (sort === 'tackles') {
+          aVal = a.totalTackles;
+          bVal = b.totalTackles;
+        } else if (sort === 'blocks') {
+          aVal = a.totalBlocks;
+          bVal = b.totalBlocks;
+        } else if (sort === 'saves') {
+          aVal = a.totalSaves;
+          bVal = b.totalSaves;
+        } else if (sort === 'matchesStarted') {
+          aVal = a.matchesStarted;
+          bVal = b.matchesStarted;
+        } else if (sort === 'avgRating') {
+          aVal = a.avgRating ?? 0;
+          bVal = b.avgRating ?? 0;
+        }
+
+        return dir === 'asc' ? (aVal ?? 0) - (bVal ?? 0) : (bVal ?? 0) - (aVal ?? 0);
       });
     }
 

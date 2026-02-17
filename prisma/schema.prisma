@@ -60,6 +60,8 @@ model Match {
   date      DateTime
   venue     String?   // Home/Away or stadium name
   result    String?   // e.g., 2-1
+  seasonId  Int
+  season    Season    @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   stats     PlayerMatchStat[]
@@ -69,15 +71,45 @@ model PlayerMatchStat {
   id        Int     @id @default(autoincrement())
   playerId  Int
   matchId   Int
+  seasonId  Int
+  started   Boolean @default(false) // Whether player started the match
+  substituted Boolean @default(false) // Whether player came on as a substitute
   minutes   Int     @default(0)
   goals     Int     @default(0)
   assists   Int     @default(0)
   yellow    Int     @default(0)
   red       Int     @default(0)
+  tackles   Int?    @default(0)
+  blocks    Int?    @default(0)
+  saves     Int?    @default(0)
+  rating    Float?  // Average player rating (0-10)
   player    Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
   match     Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  season    Season  @relation(fields: [seasonId], references: [id], onDelete: Cascade)
 
   @@unique([playerId, matchId]) // one row per player per match
+}
+
+model Season {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  isActive  Boolean  @default(false)
+  isCurrent Boolean  @default(false)
+  matches   Match[]
+  stats     PlayerMatchStat[]
+}
+
+model Club {
+  id        Int      @id @default(autoincrement())
+  name      String
+  country   String
+  manager   String
+  stadium   String
+  league    String
+  logo      String?  // URL or path to logo
+  location  String?  // City or location
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 

@@ -6,10 +6,14 @@ import { getDashboardStats } from '@/app/actions/stats';
 const defaultStats = {
   totalGoals: 0,
   totalAssists: 0,
-  totalMinutes: 0,
+  totalGoalsConceded: 0,
+  totalPlayers: 0,
   topScorers: [],
   recentMatches: [],
   matchCount: 0,
+  goalsOverTime: [],
+  topScorersComparison: [],
+  matchPerformance: [],
 };
 
 export async function GET(request: NextRequest) {
@@ -19,7 +23,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const stats = await getDashboardStats();
+    // Get season from query params
+    const { searchParams } = new URL(request.url);
+    const season = searchParams.get('season') || undefined;
+
+    const stats = await getDashboardStats(season);
     // Return default stats if null to prevent undefined errors
     return NextResponse.json(stats || defaultStats);
   } catch (error) {

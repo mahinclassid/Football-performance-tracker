@@ -26,8 +26,7 @@ export function SearchBar({
     }, debounceMs);
 
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, debounceMs]);
+  }, [query, debounceMs, onSearch]);
 
   return (
     <div className={cn('relative', className)}>

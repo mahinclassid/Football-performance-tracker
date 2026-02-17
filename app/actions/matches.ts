@@ -17,6 +17,7 @@ export async function createMatch(data: MatchInput): Promise<ActionResult<{ id: 
     }
 
     const validated = matchSchema.parse(data);
+    
     const match = await prisma.match.create({ data: validated });
 
     revalidatePath('/matches');
@@ -40,6 +41,7 @@ export async function updateMatch(
     }
 
     const validated = matchSchema.parse(data);
+    
     await prisma.match.update({
       where: { id },
       data: validated,
@@ -82,7 +84,29 @@ export async function upsertPlayerMatchStat(
     }
 
     // Validate all stats
-    const validatedStats = stats.map((stat) => playerMatchStatSchema.parse(stat));
+    const validatedStats = stats.map((stat) => {
+      try {
+        return playerMatchStatSchema.parse(stat);
+      } catch (parseError) {
+        console.error('Validation error for stat:', stat, parseError);
+        throw parseError;
+      }
+    });
+
+    if (validatedStats.length === 0) {
+      return { ok: false, message: 'No statistics to save' };
+    }
+
+    // Get the first match to fetch seasonId
+    const firstStat = validatedStats[0];
+    const match = await prisma.match.findUnique({
+      where: { id: firstStat.matchId },
+      select: { seasonId: true },
+    });
+
+    if (!match) {
+      return { ok: false, message: 'Match not found' };
+    }
 
     // Use transaction for batch operation
     await prisma.$transaction(
@@ -95,13 +119,22 @@ export async function upsertPlayerMatchStat(
             },
           },
           update: {
+            started: stat.started,
+            substituted: stat.substituted,
             minutes: stat.minutes,
             goals: stat.goals,
             assists: stat.assists,
             yellow: stat.yellow,
             red: stat.red,
+            tackles: stat.tackles,
+            blocks: stat.blocks,
+            saves: stat.saves,
+            rating: stat.rating,
           },
-          create: stat,
+          create: {
+            ...stat,
+            seasonId: match.seasonId,
+          },
         })
       )
     );
@@ -110,6 +143,13 @@ export async function upsertPlayerMatchStat(
     revalidatePath('/dashboard');
     return { ok: true, message: 'Statistics saved successfully' };
   } catch (error: any) {
+    console.error('Error saving statistics:', error);
+    console.error('Error details:', {
+      message: error?.message,
+      code: error?.code,
+      name: error?.name,
+      errors: error?.errors,
+    });
     if (error.code === 'P2002') {
       return { ok: false, message: 'Duplicate stat entry' };
     }

@@ -2,13 +2,15 @@
 
 import { useState } from 'react';
 import useSWR from 'swr';
-import { PlusIcon, PencilIcon, TrashIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilIcon, TrashIcon, ChartBarIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { FormDialog } from '@/components/ui/FormDialog';
 import { LoadingWrapper } from '@/components/ui/LoadingWrapper';
 import { MatchForm } from '@/components/forms/MatchForm';
 import { PlayerStatsForm } from '@/components/forms/PlayerStatsForm';
-import { createMatch, deleteMatch, upsertPlayerMatchStat, type ActionResult } from '@/app/actions/matches';
+import { TeamStatsCard } from '@/components/ui/TeamStatsCard';
+import { SeasonFilter } from '@/components/ui/SeasonFilter';
+import { createMatch, updateMatch, deleteMatch, upsertPlayerMatchStat, type ActionResult } from '@/app/actions/matches';
 import { useToast } from '@/components/ui/Toast';
 import { Toast } from '@/components/ui/Toast';
 import { formatDate } from '@/lib/utils';
@@ -22,17 +24,25 @@ interface Match {
   date: string;
   venue: string | null;
   result: string | null;
+  seasonId?: number;
   stats: Array<{
     playerId: number;
+    started: boolean;
+    substituted: boolean;
     minutes: number;
     goals: number;
     assists: number;
     yellow: number;
     red: number;
+    tackles: number | null;
+    blocks: number | null;
+    saves: number | null;
+    rating: number | null;
     player: {
       id: number;
       firstName: string;
       lastName: string;
+      position: string;
     };
   }>;
 }
@@ -43,10 +53,16 @@ export default function MatchesPage() {
 
   const [isMatchDialogOpen, setIsMatchDialogOpen] = useState(false);
   const [isStatsDialogOpen, setIsStatsDialogOpen] = useState(false);
+  const [isTeamStatsDialogOpen, setIsTeamStatsDialogOpen] = useState(false);
   const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedSeason, setSelectedSeason] = useState<string>('');
 
-  const { data: matches = [], isLoading: isLoadingMatches, mutate } = useSWR<Match[]>('/api/matches', fetcher, {
+  const matchesUrl = selectedSeason
+    ? `/api/matches?season=${encodeURIComponent(selectedSeason)}`
+    : '/api/matches';
+
+  const { data: matches = [], isLoading: isLoadingMatches, mutate } = useSWR<Match[]>(matchesUrl, fetcher, {
     revalidateOnFocus: true,
   });
 
@@ -84,21 +100,42 @@ export default function MatchesPage() {
   const handleMatchSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      const result: ActionResult<{ id: number }> = await createMatch(data);
-      if (result.ok && result.data) {
-        showToast(result.message || 'Match created successfully');
-        setIsMatchDialogOpen(false);
-        mutate();
-        // Open stats dialog for the new match
-        setTimeout(() => {
-          setSelectedMatchId(result.data!.id);
-          setIsStatsDialogOpen(true);
-        }, 100);
+      let result: ActionResult<{ id: number }> | ActionResult;
+      
+      if (selectedMatchId) {
+        // Update existing match
+        result = await updateMatch(selectedMatchId, data);
+        if (result.ok) {
+          showToast(result.message || 'Match updated successfully');
+          setIsMatchDialogOpen(false);
+          setSelectedMatchId(null);
+          mutate();
+        } else {
+          showToast(result.message || 'Failed to update match', 'error');
+          console.error('Update match error:', result);
+        }
       } else {
-        showToast(result.message || 'Failed to create match', 'error');
+        // Create new match
+        result = await createMatch(data);
+        if (result.ok && result.data) {
+          showToast(result.message || 'Match created successfully');
+          setIsMatchDialogOpen(false);
+          mutate();
+          // Open stats dialog for the new match
+          setTimeout(() => {
+            setSelectedMatchId((result as ActionResult<{ id: number }>).data!.id);
+            setIsStatsDialogOpen(true);
+          }, 100);
+        } else {
+          // Show more detailed error info if available
+          const errorMsg = result.message || JSON.stringify(result) || 'Failed to create match';
+          showToast(errorMsg, 'error');
+          console.error('Create match error:', result);
+        }
       }
-    } catch (error) {
-      showToast('An error occurred', 'error');
+    } catch (error: any) {
+      showToast(error?.message || 'An error occurred', 'error');
+      console.error('Match submit exception:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -107,11 +144,17 @@ export default function MatchesPage() {
   const handleStatsSubmit = async (stats: Array<{
     playerId: number;
     matchId: number;
+    started: boolean;
+    substituted: boolean;
     minutes: number;
     goals: number;
     assists: number;
     yellow: number;
     red: number;
+    tackles?: number | null;
+    blocks?: number | null;
+    saves?: number | null;
+    rating?: number | null;
   }>) => {
     if (!selectedMatchId) return;
 
@@ -133,6 +176,11 @@ export default function MatchesPage() {
     }
   };
 
+  const handleViewTeamStats = (matchId: number) => {
+    setSelectedMatchId(matchId);
+    setIsTeamStatsDialogOpen(true);
+  };
+
   const selectedMatch = selectedMatchId
     ? matches.find((m) => m.id === selectedMatchId)
     : null;
@@ -140,13 +188,56 @@ export default function MatchesPage() {
   const existingStats = selectedMatch
     ? selectedMatch.stats.map((stat) => ({
         playerId: stat.playerId,
+        started: stat.started,
+        substituted: stat.substituted,
         minutes: stat.minutes,
         goals: stat.goals,
         assists: stat.assists,
         yellow: stat.yellow,
         red: stat.red,
+        tackles: stat.tackles,
+        blocks: stat.blocks,
+        saves: stat.saves,
+        rating: stat.rating,
       }))
     : [];
+
+  // Calculate team statistics for a match
+  const calculateTeamStats = (match: Match) => {
+    const stats = match.stats.filter((stat) => stat.started || stat.substituted); // Count all players who played (started or came on as substitute)
+    const totalGoals = stats.reduce((sum, stat) => sum + stat.goals, 0);
+    const totalAssists = stats.reduce((sum, stat) => sum + stat.assists, 0);
+    const totalTackles = stats.reduce((sum, stat) => sum + (stat.tackles || 0), 0);
+    const totalBlocks = stats.reduce((sum, stat) => sum + (stat.blocks || 0), 0);
+    const totalSaves = stats.reduce((sum, stat) => sum + (stat.saves || 0), 0);
+    
+    // Parse goals conceded from result string
+    let goalsConceded = 0;
+    if (match.result) {
+      const matchResult = match.result.match(/^(\d+)-(\d+)$/);
+      if (matchResult) {
+        goalsConceded = parseInt(matchResult[2], 10);
+      }
+    }
+
+    // Calculate average rating (only for players who played and have a rating)
+    const ratingsWithValues = stats
+      .filter((stat) => stat.rating !== null && stat.rating !== undefined)
+      .map((stat) => stat.rating!);
+    const avgRating = ratingsWithValues.length > 0
+      ? ratingsWithValues.reduce((sum, rating) => sum + rating, 0) / ratingsWithValues.length
+      : null;
+
+    return {
+      totalGoals,
+      goalsConceded,
+      totalAssists,
+      totalTackles,
+      totalBlocks,
+      totalSaves,
+      avgRating,
+    };
+  };
 
   const columns: Column<Match>[] = [
     {
@@ -177,6 +268,14 @@ export default function MatchesPage() {
 
   const rowActions = (match: Match) => (
     <div className="flex items-center gap-2">
+      <button
+        onClick={() => handleViewTeamStats(match.id)}
+        className="text-blue-600 hover:text-blue-700"
+        aria-label="View team stats"
+        title="View team statistics"
+      >
+        <EyeIcon className="h-5 w-5" />
+      </button>
       <button
         onClick={() => handleAddStats(match.id)}
         className="text-club-primary hover:text-club-primary-dark"
@@ -214,36 +313,53 @@ export default function MatchesPage() {
     >
       <div>
         <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Matches</h1>
-        <button
-          onClick={handleCreateMatch}
-          className="flex items-center gap-2 px-4 py-2 bg-club-primary text-white rounded-lg hover:bg-club-primary-dark transition-colors"
-        >
-          <PlusIcon className="h-5 w-5" />
-          Add Match
-        </button>
-      </div>
+          <h1 className="text-3xl font-bold text-gray-900">Matches</h1>
+          <button
+            onClick={handleCreateMatch}
+            className="flex items-center gap-2 px-4 py-2 bg-club-primary text-white rounded-lg hover:bg-club-primary-dark transition-colors"
+          >
+            <PlusIcon className="h-5 w-5" />
+            Add Match
+          </button>
+        </div>
 
-      <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
-        <DataTable
-          data={matches}
-          columns={columns}
-          rowActions={rowActions}
-        />
-      </div>
+        {/* Season Filter */}
+        <div className="mb-6">
+          <SeasonFilter
+            selectedSeason={selectedSeason}
+            onSeasonChange={setSelectedSeason}
+          />
+        </div>
+
+        <div className="bg-white rounded-xl shadow-card border border-gray-100 overflow-hidden">
+          <DataTable
+            data={matches}
+            columns={columns}
+            rowActions={rowActions}
+          />
+        </div>
 
       <FormDialog
         open={isMatchDialogOpen}
         onOpenChange={setIsMatchDialogOpen}
-        title="Create Match"
+        title={selectedMatchId ? 'Edit Match' : 'Create Match'}
       >
         <MatchForm
           onSubmit={handleMatchSubmit}
+          defaultValues={selectedMatch ? {
+            id: selectedMatch.id,
+            opponent: selectedMatch.opponent,
+            date: new Date(selectedMatch.date),
+            venue: selectedMatch.venue,
+            result: selectedMatch.result,
+            seasonId: selectedMatch.seasonId,
+          } : undefined}
           onCancel={() => {
             setIsMatchDialogOpen(false);
             setSelectedMatchId(null);
           }}
           isLoading={isSubmitting}
+          selectedSeasonName={selectedSeason}
         />
       </FormDialog>
 
@@ -265,6 +381,33 @@ export default function MatchesPage() {
             existingStats={existingStats}
           />
         )}
+      </FormDialog>
+
+      <FormDialog
+        open={isTeamStatsDialogOpen}
+        onOpenChange={setIsTeamStatsDialogOpen}
+        title="Team Statistics"
+      >
+        {selectedMatchId && (() => {
+          const match = matches.find((m) => m.id === selectedMatchId);
+          if (!match) return null;
+          const teamStats = calculateTeamStats(match);
+          return (
+            <div>
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">
+                  <strong>Match:</strong> vs {match.opponent} on {formatDate(match.date)}
+                </p>
+                {match.result && (
+                  <p className="text-sm text-gray-600">
+                    <strong>Result:</strong> {match.result}
+                  </p>
+                )}
+              </div>
+              <TeamStatsCard stats={teamStats} matchResult={match.result} />
+            </div>
+          );
+        })()}
       </FormDialog>
 
       <Toast

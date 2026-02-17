@@ -4,6 +4,7 @@ import { formatDate } from '@/lib/utils';
 import { PencilIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ExportPlayerReportButton } from '@/components/ui/ExportPlayerReportButton';
 
 export default async function PlayerProfilePage({
   params,
@@ -30,13 +31,16 @@ export default async function PlayerProfilePage({
           <h1 className="text-3xl font-bold text-gray-900">
             {player.firstName} {player.lastName}
           </h1>
-          <Link
-            href={`/players?edit=${player.id}`}
-            className="flex items-center gap-2 px-4 py-2 bg-club-primary text-white rounded-lg hover:bg-club-primary-dark transition-colors"
-          >
-            <PencilIcon className="h-5 w-5" />
-            Edit
-          </Link>
+          <div className="flex items-center gap-3">
+            <ExportPlayerReportButton playerId={player.id} />
+            <Link
+              href={`/players?edit=${player.id}`}
+              className="flex items-center gap-2 px-4 py-2 bg-club-primary text-white rounded-lg hover:bg-club-primary-dark transition-colors"
+            >
+              <PencilIcon className="h-5 w-5" />
+              Edit
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -93,6 +97,12 @@ export default async function PlayerProfilePage({
                   </dd>
                 </div>
                 <div>
+                  <dt className="text-sm font-medium text-gray-700">Matches Started</dt>
+                  <dd className="mt-1 text-2xl font-bold text-gray-900">
+                    {statsData.totals.matchesStarted || 0}
+                  </dd>
+                </div>
+                <div>
                   <dt className="text-sm font-medium text-gray-700">Goals</dt>
                   <dd className="mt-1 text-2xl font-bold text-club-primary">
                     {statsData.totals.goals}
@@ -108,6 +118,38 @@ export default async function PlayerProfilePage({
                   <dt className="text-sm font-medium text-gray-700">Minutes</dt>
                   <dd className="mt-1 text-2xl font-bold text-gray-900">
                     {statsData.totals.minutes}
+                  </dd>
+                </div>
+                {player.position !== 'GK' && (
+                  <>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">Tackles</dt>
+                      <dd className="mt-1 text-2xl font-bold text-blue-600">
+                        {statsData.totals.tackles || 0}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-700">Blocks</dt>
+                      <dd className="mt-1 text-2xl font-bold text-blue-600">
+                        {statsData.totals.blocks || 0}
+                      </dd>
+                    </div>
+                  </>
+                )}
+                {player.position === 'GK' && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-700">Saves</dt>
+                    <dd className="mt-1 text-2xl font-bold text-green-600">
+                      {statsData.totals.saves || 0}
+                    </dd>
+                  </div>
+                )}
+                <div>
+                  <dt className="text-sm font-medium text-gray-700">Avg Rating</dt>
+                  <dd className="mt-1 text-2xl font-bold text-amber-600">
+                    {statsData.totals.ratings && statsData.totals.ratings.length > 0
+                      ? (statsData.totals.ratings.reduce((sum, r) => sum + r, 0) / statsData.totals.ratings.length).toFixed(1)
+                      : '-'}
                   </dd>
                 </div>
                 <div>
@@ -152,6 +194,18 @@ export default async function PlayerProfilePage({
                       Assists
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                      Tackles
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                      Blocks
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                      Saves
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
+                      Rating
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-900 uppercase tracking-wider">
                       Cards
                     </th>
                   </tr>
@@ -173,6 +227,18 @@ export default async function PlayerProfilePage({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-club-primary">
                         {stat.assists}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {player.position === 'GK' ? 'N/A' : (stat.tackles ?? '-')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {player.position === 'GK' ? 'N/A' : (stat.blocks ?? '-')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {player.position === 'GK' ? (stat.saves ?? '-') : 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {stat.rating !== null && stat.rating !== undefined ? stat.rating.toFixed(1) : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {stat.yellow > 0 && (

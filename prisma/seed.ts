@@ -33,7 +33,44 @@ async function main() {
 
   console.log('Created users:', { admin: admin.email, staff: staff.email });
 
-  // Create players
+  // Create club if it doesn't exist
+  await prisma.club.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      name: 'My Football Club',
+      country: 'Bahrain',
+      manager: 'Head Coach',
+      stadium: 'My Stadium',
+      league: 'National League',
+      location: 'Manama',
+    },
+  });
+
+  console.log('Created club');
+
+  // Create seasons
+  const season2425 = await prisma.season.upsert({
+    where: { name: '24-25' },
+    update: {},
+    create: {
+      name: '24-25',
+      isActive: false,
+      isCurrent: false,
+    },
+  });
+
+  const season2526 = await prisma.season.upsert({
+    where: { name: '25-26' },
+    update: {},
+    create: {
+      name: '25-26',
+      isActive: true,
+      isCurrent: true,
+    },
+  });
+
+  console.log('Created seasons:', { season2425: season2425.name, season2526: season2526.name });
   const players = [
     { firstName: 'John', lastName: 'Smith', position: Position.GK, shirtNo: 1, heightCm: 190, weightKg: 85, dob: new Date('1995-05-15') },
     { firstName: 'Mike', lastName: 'Johnson', position: Position.DF, shirtNo: 2, heightCm: 185, weightKg: 80, dob: new Date('1993-08-20') },
@@ -71,6 +108,7 @@ async function main() {
       date: new Date('2024-01-15'),
       venue: 'Home',
       result: '2-1',
+      seasonId: season2526.id,
     },
   });
 
@@ -80,6 +118,7 @@ async function main() {
       date: new Date('2024-01-22'),
       venue: 'Away',
       result: '1-3',
+      seasonId: season2526.id,
     },
   });
 
@@ -89,6 +128,7 @@ async function main() {
       date: new Date('2024-02-01'),
       venue: 'Home',
       result: '3-0',
+      seasonId: season2526.id,
     },
   });
 
@@ -97,42 +137,42 @@ async function main() {
   // Create sample stats for match 1
   await prisma.playerMatchStat.createMany({
     data: [
-      { playerId: createdPlayers[0].id, matchId: match1.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[1].id, matchId: match1.id, minutes: 90, goals: 0, assists: 0, yellow: 1, red: 0 },
-      { playerId: createdPlayers[2].id, matchId: match1.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[5].id, matchId: match1.id, minutes: 90, goals: 0, assists: 1, yellow: 0, red: 0 },
-      { playerId: createdPlayers[6].id, matchId: match1.id, minutes: 85, goals: 0, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[7].id, matchId: match1.id, minutes: 90, goals: 1, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[9].id, matchId: match1.id, minutes: 90, goals: 1, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[10].id, matchId: match1.id, minutes: 75, goals: 0, assists: 1, yellow: 0, red: 0 },
+      { playerId: createdPlayers[0].id, matchId: match1.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[1].id, matchId: match1.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 0, yellow: 1, red: 0 },
+      { playerId: createdPlayers[2].id, matchId: match1.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[5].id, matchId: match1.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 1, yellow: 0, red: 0 },
+      { playerId: createdPlayers[6].id, matchId: match1.id, seasonId: season2526.id, minutes: 85, goals: 0, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[7].id, matchId: match1.id, seasonId: season2526.id, minutes: 90, goals: 1, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[9].id, matchId: match1.id, seasonId: season2526.id, minutes: 90, goals: 1, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[10].id, matchId: match1.id, seasonId: season2526.id, minutes: 75, goals: 0, assists: 1, yellow: 0, red: 0 },
     ],
   });
 
   // Create sample stats for match 2
   await prisma.playerMatchStat.createMany({
     data: [
-      { playerId: createdPlayers[0].id, matchId: match2.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[1].id, matchId: match2.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[3].id, matchId: match2.id, minutes: 90, goals: 0, assists: 0, yellow: 1, red: 0 },
-      { playerId: createdPlayers[5].id, matchId: match2.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[7].id, matchId: match2.id, minutes: 90, goals: 0, assists: 1, yellow: 0, red: 0 },
-      { playerId: createdPlayers[8].id, matchId: match2.id, minutes: 70, goals: 0, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[9].id, matchId: match2.id, minutes: 90, goals: 1, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[11].id, matchId: match2.id, minutes: 20, goals: 0, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[0].id, matchId: match2.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[1].id, matchId: match2.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[3].id, matchId: match2.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 0, yellow: 1, red: 0 },
+      { playerId: createdPlayers[5].id, matchId: match2.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[7].id, matchId: match2.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 1, yellow: 0, red: 0 },
+      { playerId: createdPlayers[8].id, matchId: match2.id, seasonId: season2526.id, minutes: 70, goals: 0, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[9].id, matchId: match2.id, seasonId: season2526.id, minutes: 90, goals: 1, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[11].id, matchId: match2.id, seasonId: season2526.id, minutes: 20, goals: 0, assists: 0, yellow: 0, red: 0 },
     ],
   });
 
   // Create sample stats for match 3
   await prisma.playerMatchStat.createMany({
     data: [
-      { playerId: createdPlayers[0].id, matchId: match3.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[2].id, matchId: match3.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[4].id, matchId: match3.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[5].id, matchId: match3.id, minutes: 90, goals: 0, assists: 2, yellow: 0, red: 0 },
-      { playerId: createdPlayers[6].id, matchId: match3.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[7].id, matchId: match3.id, minutes: 90, goals: 2, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[9].id, matchId: match3.id, minutes: 90, goals: 1, assists: 0, yellow: 0, red: 0 },
-      { playerId: createdPlayers[10].id, matchId: match3.id, minutes: 90, goals: 0, assists: 1, yellow: 0, red: 0 },
+      { playerId: createdPlayers[0].id, matchId: match3.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[2].id, matchId: match3.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[4].id, matchId: match3.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[5].id, matchId: match3.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 2, yellow: 0, red: 0 },
+      { playerId: createdPlayers[6].id, matchId: match3.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[7].id, matchId: match3.id, seasonId: season2526.id, minutes: 90, goals: 2, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[9].id, matchId: match3.id, seasonId: season2526.id, minutes: 90, goals: 1, assists: 0, yellow: 0, red: 0 },
+      { playerId: createdPlayers[10].id, matchId: match3.id, seasonId: season2526.id, minutes: 90, goals: 0, assists: 1, yellow: 0, red: 0 },
     ],
   });
 

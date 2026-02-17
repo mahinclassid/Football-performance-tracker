@@ -39,6 +39,9 @@ export function DataTable<T extends { id: number | string }>({
     }
   };
 
+  // Ensure data is always an array
+  const safeData = Array.isArray(data) ? data : [];
+
   return (
     <div className={cn('overflow-x-auto', className)}>
       <table className="min-w-full divide-y divide-gray-200">
@@ -77,14 +80,14 @@ export function DataTable<T extends { id: number | string }>({
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {data.length === 0 ? (
+          {safeData.length === 0 ? (
             <tr>
               <td colSpan={columns.length + (rowActions ? 1 : 0)} className={`px-6 py-4 text-center ${themeClasses.table.empty}`}>
                 No data available
               </td>
             </tr>
           ) : (
-            data.map((item) => (
+            safeData.map((item) => (
               <tr key={item.id} className="hover:bg-gray-50">
                 {columns.map((column) => (
                   <td key={String(column.key)} className={`px-6 py-4 whitespace-nowrap ${themeClasses.table.cell}`}>

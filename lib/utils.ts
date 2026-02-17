@@ -25,6 +25,18 @@ export function formatDateTime(date: Date | string): string {
   }).format(d);
 }
 
+export function calculateAge(dob: Date | string | null | undefined): number | null {
+  if (!dob) return null;
+  const birthDate = typeof dob === 'string' ? new Date(dob) : dob;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 
 
 

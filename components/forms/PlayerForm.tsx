@@ -30,7 +30,12 @@ export function PlayerForm({ onSubmit, defaultValues, onCancel, isLoading }: Pla
     if (defaultValues) {
       Object.entries(defaultValues).forEach(([key, value]) => {
         if (value !== undefined && key !== 'id') {
-          setValue(key as keyof PlayerInput, value as any);
+          let finalValue = value;
+          // Format Date objects for input display if they are dates
+          if (value instanceof Date && !isNaN(value.getTime())) {
+            finalValue = value.toISOString().split('T')[0];
+          }
+          setValue(key as keyof PlayerInput, finalValue as any);
         }
       });
     }

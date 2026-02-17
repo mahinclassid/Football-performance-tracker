@@ -21,16 +21,23 @@ export const matchSchema = z.object({
   date: z.date(),
   venue: z.string().optional().nullable(),
   result: z.string().optional().nullable(),
+  seasonId: z.number().int().positive('Season is required'),
 });
 
 export const playerMatchStatSchema = z.object({
   playerId: z.number().int().positive(),
   matchId: z.number().int().positive(),
+  started: z.boolean().default(false),
+  substituted: z.boolean().default(false),
   minutes: z.number().int().min(0).max(120).default(0),
   goals: z.number().int().min(0).default(0),
   assists: z.number().int().min(0).default(0),
   yellow: z.number().int().min(0).max(2).default(0),
   red: z.number().int().min(0).max(1).default(0),
+  tackles: z.number().int().min(0).optional().nullable(),
+  blocks: z.number().int().min(0).optional().nullable(),
+  saves: z.number().int().min(0).optional().nullable(),
+  rating: z.number().min(0).max(10).optional().nullable(),
 });
 
 export const userSchema = z.object({

@@ -16,23 +16,6 @@ export default function LoginPage() {
         <div className={themeClasses.card.container + ' py-8 px-6'}>
           <LoginForm />
         </div>
-        <div className={`text-center text-sm ${themeClasses.text.primary}`}>
-          <p className={`font-medium ${themeClasses.text.primary}`}>Demo accounts:</p>
-          <div className="mt-2 space-y-1">
-            <p className={themeClasses.text.primary}>
-              <span className={`font-semibold ${themeClasses.text.primary}`}>Admin:</span>{' '}
-              <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded text-black">coach@club.local</span>
-              {' / '}
-              <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded text-black">Coach@123!</span>
-            </p>
-            <p className={themeClasses.text.primary}>
-              <span className={`font-semibold ${themeClasses.text.primary}`}>Staff:</span>{' '}
-              <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded text-black">staff@club.local</span>
-              {' / '}
-              <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded text-black">Staff@123!</span>
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

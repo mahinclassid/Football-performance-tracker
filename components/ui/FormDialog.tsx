@@ -22,7 +22,7 @@ export function FormDialog({ open, onOpenChange, title, children, className }: F
           className={cn(
             'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2',
             'bg-white rounded-2xl shadow-xl z-50',
-            'w-full max-w-2xl max-h-[90vh] overflow-y-auto',
+            'w-full max-w-7xl max-h-[95vh] overflow-y-auto',
             'p-6',
             className
           )}
